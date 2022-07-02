@@ -1,3 +1,6 @@
+import matplotlib.pyplot as plt
+import random
+
 arr = [5,4,3,2,1]
 
 class GUI:
@@ -23,7 +26,7 @@ class GUI:
             label = ax.annotate(str(self.arr[i]), xy=(self.circle_position[i], 1), fontsize=10, ha="center")
             ax.add_artist( self.circles[i] )   
         ax.set_ylim(-2,4)
-        ax.set_xlim(-1,10)
+        ax.set_xlim(0,self.length*2)
         right_side = ax.spines["right"]
 
         right_side.set_visible(False)
