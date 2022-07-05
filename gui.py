@@ -13,18 +13,21 @@ class GUI:
         self.first_length = self.length
         x = 1
         for i in range(self.length):
-            color = '#{:06x}'.format(random.randrange(254**3))
-            circle = plt.Circle(( x , 1 ), 1 , color = color)
+            #color = '#{:06x}'.format(random.randrange(254**3))
+            #print(color)
+            color = "#99e6ff"
+            circle = plt.Circle(( x , 1 ), 1 , color = color )
             self.circles.append(circle)
             self.circle_color.append(color)
             self.circle_position.append(x)
             x+=2
             
     def plot(self, text):
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(16,9)) 
         ax = fig.add_subplot(111)
         for i in range(self.length):
-            label = ax.annotate(str(self.arr[i]), xy=(self.circle_position[i], 1), fontsize=10, ha="center")
+            
+            label = ax.annotate(str(self.arr[i]), xy=(self.circle_position[i], 1), fontsize=15, ha="center",color="#007399", fontweight='bold')
             new_c=copy(self.circles[i] )
             ax.add_patch( new_c )   
         ax.set_ylim(-2,4)
@@ -72,9 +75,10 @@ def gameTree(arr, prev=0, depth=0):
             newNode.key = 1
     return newNode
 
+
 def minimax(arr, node, depth=0, prev=0):
-    if len(arr) == 1:
-        return node.key
+    # if len(arr) == 1:
+    #     return node.key
     first, last = arr[0], arr[-1]
     # max player
     if depth % 2 == 0:
@@ -97,48 +101,46 @@ def minimax(arr, node, depth=0, prev=0):
 
 
 def gamePlay(arr, node, ui, depth=0, prev=0):
-    if len(arr) == 1:
-        return node.key
-    print("\n\n")
+    # if len(arr) == 1:
+    #     return node.key
     first, last = arr[0], arr[-1]
-    
     # player 1's turn
     if depth % 2 == 0:
-        if prev >= first and prev >= last:
-            return -1
-        if prev==0:
+        if prev == 0:
             ui.plot("Choose any number from left or right")
         else:
             ui.plot(f"AI selected {prev}")
-        newArr, last_selected, side = selectOption(arr, prev,ui)
-        
+        if prev >= first and prev >= last:
+            ui.plot("AI Wins!!!")
+            return -1
+
+        newArr, last_selected, side = selectOption(arr, prev, ui)
+
         if len(arr):
             if side == 'left':
                 return gamePlay(newArr, node.left, ui, depth + 1, last_selected)
             elif side == 'right':
-                return gamePlay(newArr, node.right,ui, depth + 1, last_selected)
+                return gamePlay(newArr, node.right, ui, depth + 1, last_selected)
     # AI's turn
     if depth % 2 == 1:
         ui.plot(f"Human selected {prev}")
         print("AI is taking it's time...")
+        time.sleep(1)
         if first > prev and node.left is not None and node.left.key == -1:
-            time.sleep(2)
             ui.remove_circle('l')
-            return gamePlay(arr[1:], node.left,ui, depth+1, first)
+            return gamePlay(arr[1:], node.left, ui, depth+1, first)
         elif last > prev and node.right is not None and node.right.key == -1:
-            time.sleep(2)
             ui.remove_circle('r')
-            return gamePlay(arr[:-1], node.right,ui, depth+1, last)
+            return gamePlay(arr[:-1], node.right, ui, depth+1, last)
         else:
             if first > prev and node.left is not None:
-                time.sleep(2)
                 ui.remove_circle('l')
-                return gamePlay(arr[1:], node.left,ui, depth+1, first)
+                return gamePlay(arr[1:], node.left, ui, depth+1, first)
             elif last > prev and node.right is not None:
-                time.sleep(2)
                 ui.remove_circle('r')
-                return gamePlay(arr[:-1], node.right,ui, depth+1, last)
+                return gamePlay(arr[:-1], node.right, ui, depth+1, last)
             else:
+                ui.plot("Human Wins!!!")
                 return 1
 
 
@@ -173,16 +175,26 @@ def selectOption(arr, last_selected,ui, side='x'):
         return selectOption(arr, last_selected, ui)
     return new_arr, new_selected, side
 
+tnc = 0
+while True:
+    x = int(input('Enter the number of circles (atleast 3): '))
+    if x >= 3:
+        tnc = x
+        break
+
 left = []
 middle = []
 right = []
 
-left = random.sample(range(1, 12), 3)
+
+middle = random.sample(range(10, 25), 2)
+tnc -= 2
+
+left = random.sample(range(1, 12), min(tnc, 3))
 left.sort()
+tnc -= min(tnc, 3)
 
-middle = random.sample(range(10, 25), 5)
-
-right = random.sample(range(8, 20), 4)
+right = random.sample(range(8, 20), tnc)
 right.sort(reverse=True)
 
 arr = []
@@ -191,22 +203,17 @@ arr.extend(middle)
 arr.extend(right)
 
 
-# ncount = random.randint(5, 12)
-# arr = random.sample(range(1, ncount+1), ncount)
-# print("ncount arr[]", ncount, arr)
+
+arr = [5, 8, 1, 10, 9]
 
 print(arr)
 
-#arr = [1,2,3,6,5,4]
+# arr = [2,5,10,23,15,9]
 
 ui = GUI(arr)
 
 
+ui = GUI(arr)
 gt = gameTree(arr, 0)
 ans = minimax(arr, gt)
 play = gamePlay(arr, gt, ui)
-print("play ", play)
-if(play == 1):
-    print("You win")
-else:
-    print("AI win")
