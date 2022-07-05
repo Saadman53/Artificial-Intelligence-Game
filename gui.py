@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import random
-
-arr = [5,4,3,2,1]
+from copy import copy
+import time
 
 class GUI:
     def __init__(self, arr):
@@ -10,7 +10,7 @@ class GUI:
         self.circles = []
         self.circle_color = []
         self.circle_position = []
-        self.max_length = self.length*2
+        self.first_length = self.length
         x = 1
         for i in range(self.length):
             color = '#{:06x}'.format(random.randrange(254**3))
@@ -20,7 +20,7 @@ class GUI:
             self.circle_position.append(x)
             x+=2
             
-    def plot(self):
+    def plot(self, text):
         fig, ax = plt.subplots()
         ax = fig.add_subplot(111)
         for i in range(self.length):
@@ -28,11 +28,13 @@ class GUI:
             new_c=copy(self.circles[i] )
             ax.add_patch( new_c )   
         ax.set_ylim(-2,4)
-        ax.set_xlim(0,self.max_length)
+        ax.set_xlim(0,self.first_length*2)
         right_side = ax.spines["right"]
 
         right_side.set_visible(False)
+        ax.set_title(text)
         ax.axis("off")
+        plt.show(block=False)
     def remove_circle(self, lr):
         if lr == 'l':
             self.circles.pop(0)
@@ -40,7 +42,6 @@ class GUI:
             self.circle_position.pop(0)
             self.arr.pop(0)
             self.length = self.length - 1
-            print("Erased")
             
         elif lr == 'r':
             self.circles.pop(self.length - 1)
@@ -48,4 +49,164 @@ class GUI:
             self.circle_position.pop(self.length - 1)
             self.arr.pop(self.length - 1)
             self.length = self.length - 1
-            print("Erased")
+            
+class Node:
+    def __init__(self, key=None, left=None, right=None):
+        self.key = key
+        self.left = left
+        self.right = right
+
+def gameTree(arr, prev=0, depth=0):
+    if not arr:
+        return None
+    first, last = arr[0], arr[-1]
+    newNode = Node()
+    if first > prev:
+        newNode.left = gameTree(arr[1:], first, depth+1)
+    if last > prev:
+        newNode.right = gameTree(arr[:-1], last, depth+1)
+    if newNode.left is None and newNode.right is None:
+        if depth % 2 == 0:
+            newNode.key = -1
+        else:
+            newNode.key = 1
+    return newNode
+
+def minimax(arr, node, depth=0, prev=0):
+    if len(arr) == 1:
+        return node.key
+    first, last = arr[0], arr[-1]
+    # max player
+    if depth % 2 == 0:
+        temp = -1
+        if first > prev and node.left is not None:
+            temp = max(temp, minimax(arr[1:], node.left, depth+1, first))
+        if last > prev and node.right is not None:
+            temp = max(temp, minimax(arr[:-1], node.right, depth+1, last))
+        node.key = temp
+        return node.key
+    # min player
+    if depth % 2 == 1:
+        temp = 1
+        if first > prev and node.left is not None:
+            temp = min(temp, minimax(arr[1:], node.left, depth+1, first))
+        if last > prev and node.right is not None:
+            temp = min(temp, minimax(arr[:-1], node.right, depth+1, last))
+        node.key = temp
+        return node.key
+
+
+def gamePlay(arr, node, ui, depth=0, prev=0):
+    if len(arr) == 1:
+        return node.key
+    print("\n\n")
+    first, last = arr[0], arr[-1]
+    
+    # player 1's turn
+    if depth % 2 == 0:
+        if prev >= first and prev >= last:
+            return -1
+        if prev==0:
+            ui.plot("Choose any number from left or right")
+        else:
+            ui.plot(f"AI selected {prev}")
+        newArr, last_selected, side = selectOption(arr, prev,ui)
+        
+        if len(arr):
+            if side == 'left':
+                return gamePlay(newArr, node.left, ui, depth + 1, last_selected)
+            elif side == 'right':
+                return gamePlay(newArr, node.right,ui, depth + 1, last_selected)
+    # AI's turn
+    if depth % 2 == 1:
+        ui.plot(f"Human selected {prev}")
+        print("AI is taking it's time...")
+        if first > prev and node.left is not None and node.left.key == -1:
+            time.sleep(2)
+            ui.remove_circle('l')
+            return gamePlay(arr[1:], node.left,ui, depth+1, first)
+        elif last > prev and node.right is not None and node.right.key == -1:
+            time.sleep(2)
+            ui.remove_circle('r')
+            return gamePlay(arr[:-1], node.right,ui, depth+1, last)
+        else:
+            if first > prev and node.left is not None:
+                time.sleep(2)
+                ui.remove_circle('l')
+                return gamePlay(arr[1:], node.left,ui, depth+1, first)
+            elif last > prev and node.right is not None:
+                time.sleep(2)
+                ui.remove_circle('r')
+                return gamePlay(arr[:-1], node.right,ui, depth+1, last)
+            else:
+                return 1
+
+
+def selectOption(arr, last_selected,ui, side='x'):
+    new_arr = []
+    new_selected = 0
+    side = 'x'
+    #ui.plot()
+#     print("option selection arr ", arr)
+#     print("last selected number ", last_selected)
+    selectFormLeftOrRight = input('select a number from left or right: ')
+    if selectFormLeftOrRight == 'l':
+        if arr[0] > last_selected:
+            new_arr = arr[1:]
+            new_selected = arr[0]
+            side = 'left'
+            ui.remove_circle(selectFormLeftOrRight)
+        else:
+            print('invalid selection')
+            return selectOption(arr, last_selected, ui)
+    elif selectFormLeftOrRight == 'r':
+        if arr[-1] > last_selected:
+            new_arr = arr[:-1]
+            new_selected = arr[-1]
+            side = 'right'
+            ui.remove_circle(selectFormLeftOrRight)
+        else:
+            print('invalid selection')
+            return selectOption(arr, last_selected, ui)
+    else:
+        print('invalid selection')
+        return selectOption(arr, last_selected, ui)
+    return new_arr, new_selected, side
+
+left = []
+middle = []
+right = []
+
+left = random.sample(range(1, 12), 3)
+left.sort()
+
+middle = random.sample(range(10, 25), 5)
+
+right = random.sample(range(8, 20), 4)
+right.sort(reverse=True)
+
+arr = []
+arr.extend(left)
+arr.extend(middle)
+arr.extend(right)
+
+
+# ncount = random.randint(5, 12)
+# arr = random.sample(range(1, ncount+1), ncount)
+# print("ncount arr[]", ncount, arr)
+
+print(arr)
+
+#arr = [1,2,3,6,5,4]
+
+ui = GUI(arr)
+
+
+gt = gameTree(arr, 0)
+ans = minimax(arr, gt)
+play = gamePlay(arr, gt, ui)
+print("play ", play)
+if(play == 1):
+    print("You win")
+else:
+    print("AI win")
