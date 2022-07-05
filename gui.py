@@ -10,6 +10,7 @@ class GUI:
         self.circles = []
         self.circle_color = []
         self.circle_position = []
+        self.max_length = self.length*2
         x = 1
         for i in range(self.length):
             color = '#{:06x}'.format(random.randrange(254**3))
@@ -24,25 +25,27 @@ class GUI:
         ax = fig.add_subplot(111)
         for i in range(self.length):
             label = ax.annotate(str(self.arr[i]), xy=(self.circle_position[i], 1), fontsize=10, ha="center")
-            ax.add_artist( self.circles[i] )   
+            new_c=copy(self.circles[i] )
+            ax.add_patch( new_c )   
         ax.set_ylim(-2,4)
-        ax.set_xlim(0,self.length*2)
+        ax.set_xlim(0,self.max_length)
         right_side = ax.spines["right"]
 
         right_side.set_visible(False)
         ax.axis("off")
     def remove_circle(self, lr):
-        if lr==1:
+        if lr == 'l':
             self.circles.pop(0)
             self.circle_color.pop(0)
             self.circle_position.pop(0)
             self.arr.pop(0)
             self.length = self.length - 1
+            print("Erased")
             
-        else:
-            
-            self.circles.pop()
-            self.circle_color.pop(0)
-            self.circle_position.pop(0)
-            self.arr.pop(0)
+        elif lr == 'r':
+            self.circles.pop(self.length - 1)
+            self.circle_color.pop(self.length - 1)
+            self.circle_position.pop(self.length - 1)
+            self.arr.pop(self.length - 1)
             self.length = self.length - 1
+            print("Erased")
