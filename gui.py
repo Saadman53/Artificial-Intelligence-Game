@@ -3,108 +3,117 @@ import random
 from copy import copy
 import time
 
+
 class GUI:
     def __init__(self, arr):
         self.arr = arr
         self.length = len(arr)
         self.circles = []
-        self.circle_color = []
         self.circle_position = []
         self.first_length = self.length
         x = 1
         for i in range(self.length):
-            #color = '#{:06x}'.format(random.randrange(254**3))
-            #print(color)
+            # color = '#{:06x}'.format(random.randrange(254**3))
+            # print(color)
             color = "#99e6ff"
-            circle = plt.Circle(( x , 1 ), 1 , color = color )
+            circle = plt.Circle((x, 1), 1, color=color)
             self.circles.append(circle)
-            self.circle_color.append(color)
             self.circle_position.append(x)
-            x+=2
-            
+            x += 2
+
     def plot(self, text):
-        fig, ax = plt.subplots(figsize=(16,9)) 
+        fig, ax = plt.subplots(figsize=(14, 6))
         ax = fig.add_subplot(111)
         for i in range(self.length):
-            
-            label = ax.annotate(str(self.arr[i]), xy=(self.circle_position[i], 1), fontsize=15, ha="center",color="#007399", fontweight='bold')
-            new_c=copy(self.circles[i] )
-            ax.add_patch( new_c )   
-        ax.set_ylim(-2,4)
-        ax.set_xlim(0,self.first_length*2)
+            label = ax.annotate(str(self.arr[i]), xy=(
+                self.circle_position[i], 1), fontsize=15, ha="center", color="#007399", fontweight='bold')
+            new_c = copy(self.circles[i])
+            ax.add_patch(new_c)
+        ax.set_ylim(-2, 4)
+        ax.set_xlim(0, self.first_length*2)
         right_side = ax.spines["right"]
-
         right_side.set_visible(False)
         ax.set_title(text)
         ax.axis("off")
         plt.show(block=False)
+
     def remove_circle(self, lr):
         if lr == 'l':
             self.circles.pop(0)
-            self.circle_color.pop(0)
             self.circle_position.pop(0)
             self.arr.pop(0)
             self.length = self.length - 1
-            
+
         elif lr == 'r':
             self.circles.pop(self.length - 1)
-            self.circle_color.pop(self.length - 1)
             self.circle_position.pop(self.length - 1)
             self.arr.pop(self.length - 1)
             self.length = self.length - 1
-            
+
+
 class Node:
     def __init__(self, key=None, left=None, right=None):
         self.key = key
         self.left = left
         self.right = right
 
-def gameTree(arr, prev=0, depth=0):
-    if not arr:
-        return None
+
+def minimax(arr, depth=0, prev=0):
     first, last = arr[0], arr[-1]
     newNode = Node()
-    if first > prev:
-        newNode.left = gameTree(arr[1:], first, depth+1)
-    if last > prev:
-        newNode.right = gameTree(arr[:-1], last, depth+1)
-    if newNode.left is None and newNode.right is None:
-        if depth % 2 == 0:
-            newNode.key = -1
-        else:
-            newNode.key = 1
-    return newNode
-
-
-def minimax(arr, node, depth=0, prev=0):
-    # if len(arr) == 1:
-    #     return node.key
-    first, last = arr[0], arr[-1]
     # max player
     if depth % 2 == 0:
         temp = -1
-        if first > prev and node.left is not None:
-            temp = max(temp, minimax(arr[1:], node.left, depth+1, first))
-        if last > prev and node.right is not None:
-            temp = max(temp, minimax(arr[:-1], node.right, depth+1, last))
-        node.key = temp
-        return node.key
+        if first > prev:
+            if len(arr) == 1:
+                newNode.left = Node()
+                newNode.key = 1
+                temp = 1
+            else:
+                leftChild = minimax(arr[1:], depth+1, first)
+                temp = max(temp, leftChild.key)
+                newNode.left = leftChild
+        if last > prev:
+            if len(arr) == 1:
+                newNode.right = Node()
+                newNode.right = 1
+                temp = 1
+            else:
+                rightChild = minimax(arr[:-1], depth+1, last)
+                temp = max(temp, rightChild.key)
+                newNode.right = rightChild
+        newNode.key = temp
+        return newNode
     # min player
     if depth % 2 == 1:
         temp = 1
-        if first > prev and node.left is not None:
-            temp = min(temp, minimax(arr[1:], node.left, depth+1, first))
-        if last > prev and node.right is not None:
-            temp = min(temp, minimax(arr[:-1], node.right, depth+1, last))
-        node.key = temp
-        return node.key
+        if first > prev:
+            if len(arr) == 1:
+                newNode.left = Node()
+                newNode.key = -1
+                temp = -1
+            else:
+                leftChild = minimax(arr[1:], depth+1, first)
+                temp = min(temp, leftChild.key)
+                newNode.left = leftChild
+        if last > prev:
+            if len(arr) == 1:
+                newNode.right = Node()
+                newNode.key = -1
+                temp = -1
+            else:
+                rightChild = minimax(arr[:-1], depth+1, last)
+                temp = min(temp, rightChild.key)
+                newNode.right = rightChild
+        newNode.key = temp
+        return newNode
 
 
 def gamePlay(arr, node, ui, depth=0, prev=0):
     # if len(arr) == 1:
     #     return node.key
     first, last = arr[0], arr[-1]
-    # player 1's turn
+    # human's turn
     if depth % 2 == 0:
         if prev == 0:
             ui.plot("Choose any number from left or right")
@@ -116,7 +125,7 @@ def gamePlay(arr, node, ui, depth=0, prev=0):
 
         newArr, last_selected, side = selectOption(arr, prev, ui)
 
-        if len(arr):
+        if len(newArr):
             if side == 'left':
                 return gamePlay(newArr, node.left, ui, depth + 1, last_selected)
             elif side == 'right':
@@ -125,7 +134,7 @@ def gamePlay(arr, node, ui, depth=0, prev=0):
     if depth % 2 == 1:
         ui.plot(f"Human selected {prev}")
         print("AI is taking it's time...")
-        time.sleep(1)
+        time.sleep(2)
         if first > prev and node.left is not None and node.left.key == -1:
             ui.remove_circle('l')
             return gamePlay(arr[1:], node.left, ui, depth+1, first)
@@ -144,11 +153,11 @@ def gamePlay(arr, node, ui, depth=0, prev=0):
                 return 1
 
 
-def selectOption(arr, last_selected,ui, side='x'):
+def selectOption(arr, last_selected, ui):
     new_arr = []
     new_selected = 0
     side = 'x'
-    #ui.plot()
+    # ui.plot()
 #     print("option selection arr ", arr)
 #     print("last selected number ", last_selected)
     selectFormLeftOrRight = input('select a number from left or right: ')
@@ -175,9 +184,10 @@ def selectOption(arr, last_selected,ui, side='x'):
         return selectOption(arr, last_selected, ui)
     return new_arr, new_selected, side
 
+
 tnc = 0
 while True:
-    x = int(input('Enter the number of circles (atleast 3): '))
+    x = int(input('Enter the number of balls (atleast 3): '))
     if x >= 3:
         tnc = x
         break
@@ -203,17 +213,17 @@ arr.extend(middle)
 arr.extend(right)
 
 
-
-arr = [5, 8, 1, 10, 9]
+# arr = [5, 8, 1, 10, 9]
 
 print(arr)
 
 # arr = [2,5,10,23,15,9]
 
-ui = GUI(arr)
-
 
 ui = GUI(arr)
-gt = gameTree(arr, 0)
-ans = minimax(arr, gt)
+# gt = gameTree(arr, 0)
+# ans = minimax(arr, gt)
+# play = gamePlay(arr, gt, ui)
+
+gt = minimax(arr)
 play = gamePlay(arr, gt, ui)
